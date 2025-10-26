@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天气预报</title>
+    <link rel="stylesheet" href="./css/天气预报.css">
+</head>
+
+<body>
+    <div class="box">
+        <div class="text">
+            <!-- 时间,地区,搜索栏 -->
+            <div class="TAI">
+                <div class="time">
+                </div>
+                <div class="AI">
+                    <div class="area">北京市</div>
+                    <div class="search"><input type="text" placeholder="搜索城市"></div>
+                    <ul class="list">                    
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 温度 风向 -->
+            <div class="TW">
+            </div>
+
+            <!-- 今天详细 -->
+            <div class="today">
+            </div>
+
+            <!-- 未来几天 -->
+            <div class="futurn">
+                <div>
+                    <h3>七日内天气预报</h3>
+                </div>
+                <ul>
+
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="./js档/myAxios.js"></script>
+<script>
+    function getWea(cityCode) {
+        myAxios({
+            url: 'https://hmajax.itheima.net/api/weather',
+            params: {
+                city: cityCode
+            }
+        }).then(result => {
+            // console.log(result);
+            const data = result.data
+            document.querySelector('.TAI .time').innerHTML = `<span class="dateShort">${data.dateShort}</span>&nbsp;<span>农历</span>&nbsp;<span class="dateLunar">${data.dateLunar}</span>`
+            document.querySelector('.TW').innerHTML = `
+            <div class="T">
+                    <span class="temperature">${data.temperature}</span>
+            </div>
+                <div class="W">
+                    <div class="PM25">
+                        <span class="psPm25">${data.psPm25}</span>&nbsp;<span class="psPm25Level">${data.psPm25Level}</span>
+                    </div>
+                    <div class="wind">
+                        <div><img class="weatherImg" src="${data.weatherImg}" alt=""><span class="weather">${data.weather}</span></div>&nbsp;<span class="windDirection">${data.windDirection}</span>&nbsp;<span class="windPower">${data.windPower}</span>
+                    </div>
+                </div>`
+            const todayWeather = data.todayWeather
+            document.querySelector('.today').innerHTML = `
+            <span>今天</span>
+            <div><span class="weather">${todayWeather.weather}&nbsp;</span><span class="temNight">${todayWeather.temNight}</span><span>~</span><span
+            class="temDay">${todayWeather.temDay}</span></div><span class="ultraviolet">${todayWeather.ultraviolet}</span><span
+            class="humidity">湿度&nbsp;${todayWeather.humidity}</span><span class="sunriseTime">日出&nbsp;${todayWeather.sunriseTime}</span><span
+            class="sunriseTime">日落&nbsp;${todayWeather.sunriseTime}</span>`
+            const dayForecast = data.dayForecast
+            document.querySelector('.futurn ul').innerHTML = dayForecast.map((ele) => {
+                const { date, dateFormat, temDay, temNight, weather, weatherImg, windDirection, windPower } = ele
+                return `
+                <li>
+                        <p class="dateFormat">${dateFormat}</p>
+                        <p class="data">${date}</p>
+                        <img class="weatherImg" src="${weatherImg}" alt="">
+                        <p class="weather">${weather}</p>
+                        <p><span class="temNight">${temNight}</span><span>~</span><span class="temDay">${temDay}</span><span>℃</span></p>
+                        <p><span class="windDirection">${windDirection}</span><span class="windPower">${windPower}</span></p>
+                </li>`
+            }).join('')
+        })
+    }
+
+    getWea('110100')
+    const inpSeach = document.querySelector('.search input')
+
+    inpSeach.addEventListener('click', () => {
+        document.querySelector('.AI .list').style.display = 'block'
+    })
+
+    document.querySelector('body').addEventListener('click', e => {
+        const input = document.querySelector('.search input')
+        const li = document.querySelector('.AI .list li')
+        if (e.target != li && e.target != input) {
+            if(li){
+                li.parentNode.style.display = 'none'
+            }
+           
+        }
+    })
+
+    inpSeach.addEventListener('input', write(n, 500))
+
+    function write(fun, time) {
+        let t = null
+        return function () {
+            if (t) { clearInterval(t) }
+            t = setTimeout(fun, time)
+        }
+    }
+
+    function n() {
+        const value = inpSeach.value
+        myAxios({
+            url: 'https://hmajax.itheima.net/api/weather/city',
+            params: {
+                city: value
+            }
+        }).then(result => {
+            console.log(result);
+            
+            const data = result.data
+            
+            document.querySelector('.AI .list').innerHTML = data.map(e => {
+                const{code,name}=e
+                console.log(name.substring(0));
+                return `<li data-id="${code}">${name}</li>`
+            }).join('')
+        })
+    }
+
+    document.querySelector('.AI .list ').addEventListener('click',(e)=>{
+        if(e.target.tagName==='LI'){
+            const y=e.target.dataset.id
+            const cityName=e.target.innerHTML
+            getWea(y)
+            document.querySelector('.AI .area').innerHTML=cityName
+            inpSeach.value=''
+            document.querySelector('.AI .list').innerHTML=''
+            document.querySelector('.list').style.display='none'
+        }
+    })
+
+
+
+
+</script>
+
+</html>
